@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(npm create vite@latest . -- --template react)",
+      "PowerShell($source = \"c:\\\\Users\\\\Liushuifusu\\\\Desktop\\\\su-qiyao-temp\"; $dest = \"c:\\\\Users\\\\Liushuifusu\\\\Desktop\\\\Su Qiyao-Personal-Website\"; Get-ChildItem $source | ForEach-Object { Move-Item $_.FullName $dest -Force }; Remove-Item $source -Recurse -Force)",
+      "PowerShell(npm install tailwindcss @tailwindcss/vite lucide-react)",
+      "PowerShell(npm run build)",
+      "PowerShell(node -e \"const m = require\\('lucide-react'\\); const names = Object.keys\\(m\\).filter\\(k => k.toLowerCase\\(\\).includes\\('git'\\) || k.toLowerCase\\(\\).includes\\('link'\\)\\); console.log\\(names\\);\")",
+      "PowerShell(node -e \"const m = require\\('lucide-react'\\); const names = Object.keys\\(m\\).filter\\(k => k.toLowerCase\\(\\).includes\\('brand'\\) || k.includes\\('Globe'\\) || k.includes\\('Link'\\) || k === 'MessageCircle'\\); console.log\\(names.slice\\(0,20\\)\\);\")",
+      "PowerShell(npm run dev)",
+      "PowerShell(winget install --id Git.Git -e --source winget --accept-package-agreements 2>&1)",
+      "PowerShell($backup = \"c:\\\\Users\\\\Liushuifusu\\\\Desktop\\\\Su Qiyao-Personal-Website\\\\src\\\\components\\\\__backup__\"; New-Item -ItemType Directory -Force -Path $backup | Out-Null; Copy-Item \"src\\\\components\\\\Hero.jsx\" \"$backup\\\\Hero.jsx\" -Force; Copy-Item \"src\\\\components\\\\Navbar.jsx\" \"$backup\\\\Navbar.jsx\" -Force; Copy-Item \"src\\\\App.jsx\" \"$backup\\\\App.jsx\" -Force; Copy-Item \"src\\\\index.css\" \"$backup\\\\index.css\" -Force; Write-Output \"Backup complete\")",
+      "PowerShell($backup = \"c:\\\\Users\\\\Liushuifusu\\\\Desktop\\\\Su Qiyao-Personal-Website\\\\src\\\\components\\\\__backup__\"; Copy-Item \"$backup\\\\Hero.jsx\" \"src\\\\components\\\\Hero.jsx\" -Force; Copy-Item \"$backup\\\\Navbar.jsx\" \"src\\\\components\\\\Navbar.jsx\" -Force; Copy-Item \"$backup\\\\App.jsx\" \"src\\\\App.jsx\" -Force; Copy-Item \"$backup\\\\index.css\" \"src\\\\index.css\" -Force; Remove-Item \"$backup\" -Recurse -Force; Write-Output \"Reverted to backup\")",
+      "Bash(npm run *)",
+      "Bash(mkdir -p \"c:/Users/Liushuifusu/Desktop/Su Qiyao-Personal-Website/public/images\")",
+      "Bash(mkdir -p \"c:/Users/Liushuifusu/Desktop/back1-26530-1659\")",
+      "Bash(cp -r \"c:/Users/Liushuifusu/Desktop/Su Qiyao-Personal-Website/src\" \"c:/Users/Liushuifusu/Desktop/back1-26530-1659/\")",
+      "Bash(cp -r \"c:/Users/Liushuifusu/Desktop/Su Qiyao-Personal-Website/public\" \"c:/Users/Liushuifusu/Desktop/back1-26530-1659/\")",
+      "Bash(cp \"c:/Users/Liushuifusu/Desktop/Su Qiyao-Personal-Website/index.html\" \"c:/Users/Liushuifusu/Desktop/back1-26530-1659/\")",
+      "Bash(cp \"c:/Users/Liushuifusu/Desktop/Su Qiyao-Personal-Website/package.json\" \"c:/Users/Liushuifusu/Desktop/back1-26530-1659/\")",
+      "Bash(mkdir -p \"c:/Users/Liushuifusu/Desktop/back2-26530-1706\")",
+      "Bash(cp -r \"c:/Users/Liushuifusu/Desktop/Su Qiyao-Personal-Website/src\" \"c:/Users/Liushuifusu/Desktop/back2-26530-1706/\")",
+      "Bash(cp -r \"c:/Users/Liushuifusu/Desktop/Su Qiyao-Personal-Website/public\" \"c:/Users/Liushuifusu/Desktop/back2-26530-1706/\")",
+      "Bash(cp \"c:/Users/Liushuifusu/Desktop/Su Qiyao-Personal-Website/index.html\" \"c:/Users/Liushuifusu/Desktop/back2-26530-1706/\")",
+      "Bash(cp \"c:/Users/Liushuifusu/Desktop/Su Qiyao-Personal-Website/package.json\" \"c:/Users/Liushuifusu/Desktop/back2-26530-1706/\")",
+      "Bash(git --version)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git config *)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\Liushuifusu\\Desktop\\Su Qiyao-Personal-Website\\src",
+      "c:\\Users\\Liushuifusu\\Desktop\\Su Qiyao-Personal-Website\\public"
+    ]
+  }
+}
