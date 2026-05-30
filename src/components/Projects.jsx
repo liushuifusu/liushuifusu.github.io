@@ -43,7 +43,7 @@ function ProjectCard({ project }) {
 
         {/* Tech tags */}
         <div className="flex flex-wrap gap-2 mb-5">
-          {project.tech.map((t) => (
+          {(project.tech || []).map((t) => (
             <span
               key={t}
               className={`px-2.5 py-1 text-xs font-medium rounded-full border ${getTagColor(t)}`}
@@ -70,7 +70,7 @@ function ProjectCard({ project }) {
           <h4 className="text-sm font-semibold text-white-soft tracking-wide">主要工作</h4>
         </div>
         <ul className="space-y-1.5">
-          {project.work.map((item, j) => (
+          {(project.work || []).map((item, j) => (
             <li key={j} className="text-sm text-slate flex items-start gap-2.5">
               <span className="text-blue-400 mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-400/60 shrink-0"></span>
               <span>{item}</span>
@@ -86,7 +86,7 @@ function ProjectCard({ project }) {
           <h4 className="text-sm font-semibold text-white-soft tracking-wide">项目成果</h4>
         </div>
         <ul className="space-y-1.5">
-          {project.results.map((item, j) => (
+          {(project.results || []).map((item, j) => (
             <li key={j} className="text-sm text-slate flex items-start gap-2.5">
               <span className="text-yellow-400 mt-1.5 w-1.5 h-1.5 rounded-full bg-yellow-400/60 shrink-0"></span>
               <span>{item}</span>
@@ -101,7 +101,7 @@ function ProjectCard({ project }) {
 export default function Projects() {
   return (
     <div className="space-y-8">
-      {profile.projects.map((project, i) => (
+      {(profile.projects || []).map((project, i) => (
         <ProjectCard key={i} project={project} />
       ))}
     </div>
