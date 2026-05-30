@@ -1,6 +1,5 @@
 import { FolderGit2, FileText, Wrench, Star } from "lucide-react";
 import { profile } from "../data/profile";
-import useScrollReveal from "../hooks/useScrollReveal";
 
 /* 技术标签颜色 */
 const tagColors = [
@@ -18,12 +17,9 @@ function getTagColor(tech) {
 }
 
 function ProjectCard({ project }) {
-  const ref = useScrollReveal();
-
   return (
     <div
-      ref={ref}
-      className="reveal card-hover bg-navy-light rounded-xl border border-white/5 overflow-hidden"
+      className="card-hover bg-navy-light rounded-xl border border-white/5 overflow-hidden"
     >
       {/* Header */}
       <div className="p-6 sm:p-8 pb-0">
