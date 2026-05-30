@@ -33,7 +33,10 @@
       "Bash(git remote *)",
       "Bash(git push *)",
       "WebFetch(domain:gitee.com)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://gitee.com/su-lucky123/su-lucky123\")"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://gitee.com/su-lucky123/su-lucky123\")",
+      "Bash(git ls-remote *)",
+      "Bash(winget install *)",
+      "Bash(node -e \"const p = require\\('./src/data/profile.js'\\); console.log\\(Object.keys\\(p.profile.projects[0]\\)\\)\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\Liushuifusu\\Desktop\\Su Qiyao-Personal-Website\\src",
