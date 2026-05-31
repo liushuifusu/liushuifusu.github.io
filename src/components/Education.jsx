@@ -46,16 +46,16 @@ function EduItem({ edu }) {
 }
 /* ── Single draggable sphere ── */
 function CourseSphere({ courses, radius, sphereSize }) {
-  const [tagStyles, setTagStyles] = useState(() => []);
+  const spanRefs = useRef([]);
   const draggingRef = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
   const rotationRef = useRef({ x: 0.3, y: 0 });
   const velocityRef = useRef({ x: 0, y: 0 });
   const animRef = useRef(null);
-  const stylesRef = useRef([]);
   const baseRef = useRef([]);
+  const readyRef = useRef(false);
 
-  // Compute base positions — stable, only changes when courses/radius change
+  // Compute base positions (stable)
   const basePositions = useMemo(() => {
     const n = courses.length;
     if (n === 0) return [];
@@ -74,13 +74,13 @@ function CourseSphere({ courses, radius, sphereSize }) {
     return pts;
   }, [courses.length, radius]);
 
-  // Keep baseRef in sync
   baseRef.current = basePositions;
 
-  // compute styles from rotation
-  const computeStyles = useCallback(() => {
+  // Apply styles to DOM refs directly (no React state in animation loop)
+  const applyToDOM = useCallback(() => {
+    if (!readyRef.current) return;
     const base = baseRef.current;
-    if (!base || base.length === 0) return [];
+    if (!base || base.length === 0) return;
     const { x: rotX, y: rotY } = rotationRef.current;
     const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
     const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
@@ -93,27 +93,28 @@ function CourseSphere({ courses, radius, sphereSize }) {
     });
     items.sort((a, b) => a.z - b.z);
     const zMin = -radius, zMax = radius;
-    const styles = new Array(items.length);
-    items.forEach((item) => {
+    const els = spanRefs.current;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const el = els[item.index];
+      if (!el) continue;
       const t = (item.z - zMin) / (zMax - zMin);
-      styles[item.index] = {
-        x: item.x, y: item.y,
-        zIndex: Math.round(t * 100),
-        opacity: 0.35 + t * 0.65,
-        transform: `translate(${item.x}px, ${item.y}px) translate(-50%, -50%) scale(${0.7 + t * 0.4})`,
-      };
-    });
-    return styles;
+      el.style.zIndex = Math.round(t * 100);
+      el.style.opacity = (0.35 + t * 0.65).toString();
+      el.style.transform = `translate(${item.x}px, ${item.y}px) translate(-50%, -50%) scale(${0.7 + t * 0.4})`;
+    }
   }, [radius]);
 
-  // Initial render: compute and set styles once
+  // Mark ready after first paint
   useEffect(() => {
-    const s = computeStyles();
-    stylesRef.current = s;
-    setTagStyles(s);
+    const frame = requestAnimationFrame(() => {
+      readyRef.current = true;
+      applyToDOM();
+    });
+    return () => cancelAnimationFrame(frame);
   }, []); // eslint-disable-line
 
-  // Animation loop — never restarts
+  // Animation loop
   useEffect(() => {
     const animate = () => {
       const v = velocityRef.current;
@@ -126,11 +127,7 @@ function CourseSphere({ courses, radius, sphereSize }) {
       } else if (!draggingRef.current && !hasV) {
         rotationRef.current.y += 0.0008;
       }
-      if (!draggingRef.current) {
-        const s = computeStyles();
-        stylesRef.current = s;
-        setTagStyles(s);
-      }
+      if (!draggingRef.current) applyToDOM();
       animRef.current = requestAnimationFrame(animate);
     };
     animRef.current = requestAnimationFrame(animate);
@@ -145,7 +142,6 @@ function CourseSphere({ courses, radius, sphereSize }) {
     e.preventDefault();
   }, []);
 
-  // Mouse events
   useEffect(() => {
     const move = (e) => {
       if (!draggingRef.current) return;
@@ -155,9 +151,7 @@ function CourseSphere({ courses, radius, sphereSize }) {
       rotationRef.current.x -= dy * 0.005;
       velocityRef.current = { x: dx * 0.005, y: dy * 0.005 };
       lastMouseRef.current = { x: e.clientX, y: e.clientY };
-      const s = computeStyles();
-      stylesRef.current = s;
-      setTagStyles(s);
+      applyToDOM();
     };
     const up = () => { draggingRef.current = false; };
     window.addEventListener("mousemove", move);
@@ -174,26 +168,24 @@ function CourseSphere({ courses, radius, sphereSize }) {
       className="relative cursor-grab active:cursor-grabbing"
       style={{ width: sphereSize, height: sphereSize }}
     >
-      {courses.map((course, i) => {
-        const s = tagStyles[i];
-        return (
-          <span
-            key={course}
-            className="absolute left-1/2 top-1/2 px-2.5 py-1 text-xs whitespace-nowrap rounded-lg border select-none"
-            style={{
-              zIndex: s?.zIndex ?? 0,
-              opacity: s?.opacity ?? 0,
-              transform: s?.transform ?? "translate(-50%, -50%)",
-              color: "rgb(168, 178, 209)",
-              background: "rgba(17, 34, 64, 0.9)",
-              borderColor: "rgba(100, 255, 218, 0.2)",
-              pointerEvents: "none",
-            }}
-          >
-            {course}
-          </span>
-        );
-      })}
+      {courses.map((course, i) => (
+        <span
+          key={course}
+          ref={el => { spanRefs.current[i] = el; }}
+          className="absolute left-1/2 top-1/2 px-2.5 py-1 text-xs whitespace-nowrap rounded-lg border select-none"
+          style={{
+            zIndex: 0,
+            opacity: 0,
+            transform: "translate(-50%, -50%)",
+            color: "rgb(168, 178, 209)",
+            background: "rgba(17, 34, 64, 0.9)",
+            borderColor: "rgba(100, 255, 218, 0.2)",
+            pointerEvents: "none",
+          }}
+        >
+          {course}
+        </span>
+      ))}
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full pointer-events-none"
         style={{ background: "radial-gradient(circle, rgba(100,255,218,0.1), transparent 70%)" }}
