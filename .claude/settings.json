@@ -38,7 +38,10 @@
       "Bash(winget install *)",
       "Bash(node -e \"const p = require\\('./src/data/profile.js'\\); console.log\\(Object.keys\\(p.profile.projects[0]\\)\\)\")",
       "Bash(node -e ' *)",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(npx serve *)",
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(curl -s http://localhost:4174)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Liushuifusu\\Desktop\\Su Qiyao-Personal-Website\\src",
