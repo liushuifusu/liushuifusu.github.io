@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { GraduationCap, Calendar, BookOpen } from "lucide-react";
 import { profile } from "../data/profile";
 import useScrollReveal from "../hooks/useScrollReveal";
@@ -46,41 +46,42 @@ function EduItem({ edu }) {
 }
 /* ── Single draggable sphere ── */
 function CourseSphere({ courses, radius, sphereSize }) {
-  const containerRef = useRef(null);
-  const spanRefs = useRef([]);
+  const [tagStyles, setTagStyles] = useState(() => []);
   const draggingRef = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
   const rotationRef = useRef({ x: 0.3, y: 0 });
   const velocityRef = useRef({ x: 0, y: 0 });
   const animRef = useRef(null);
+  const stylesRef = useRef([]);
+  const baseRef = useRef([]);
 
-  // Compute base positions once (stored in ref for stability)
-  const basePositionsRef = useRef([]);
-  useEffect(() => {
+  // Compute base positions — stable, only changes when courses/radius change
+  const basePositions = useMemo(() => {
     const n = courses.length;
-    if (n === 0) { basePositionsRef.current = []; return; }
+    if (n === 0) return [];
     const pts = [];
     const phi = Math.PI * (3 - Math.sqrt(5));
     for (let i = 0; i < n; i++) {
       const ny = 1 - (i / (n - 1)) * 2;
-      const rad = Math.sqrt(1 - ny * ny);
+      const r = Math.sqrt(1 - ny * ny);
       const theta = phi * i;
       pts.push({
-        x: Math.cos(theta) * rad * radius,
+        x: Math.cos(theta) * r * radius,
         y: ny * radius,
-        z: Math.sin(theta) * rad * radius,
+        z: Math.sin(theta) * r * radius,
       });
     }
-    basePositionsRef.current = pts;
-  }, [courses, radius]);
+    return pts;
+  }, [courses.length, radius]);
 
-  // Update DOM directly via refs (no React state)
-  const applyStyles = useCallback(() => {
-    const base = basePositionsRef.current;
-    if (base.length === 0) return;
+  // Keep baseRef in sync
+  baseRef.current = basePositions;
+
+  // compute styles from rotation
+  const computeStyles = useCallback(() => {
+    const base = baseRef.current;
+    if (!base || base.length === 0) return [];
     const { x: rotX, y: rotY } = rotationRef.current;
-
-    // Rotate all points
     const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
     const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
     const items = base.map((p, i) => {
@@ -91,22 +92,29 @@ function CourseSphere({ courses, radius, sphereSize }) {
       return { x: x1, y: y1, z: z2, index: i };
     });
     items.sort((a, b) => a.z - b.z);
-
     const zMin = -radius, zMax = radius;
-    const els = spanRefs.current;
+    const styles = new Array(items.length);
     items.forEach((item) => {
-      const el = els[item.index];
-      if (!el) return;
       const t = (item.z - zMin) / (zMax - zMin);
-      el.style.zIndex = Math.round(t * 100);
-      el.style.opacity = 0.35 + t * 0.65;
-      el.style.transform = `translate(${item.x}px, ${item.y}px) translate(-50%, -50%) scale(${0.7 + t * 0.4})`;
+      styles[item.index] = {
+        x: item.x, y: item.y,
+        zIndex: Math.round(t * 100),
+        opacity: 0.35 + t * 0.65,
+        transform: `translate(${item.x}px, ${item.y}px) translate(-50%, -50%) scale(${0.7 + t * 0.4})`,
+      };
     });
+    return styles;
   }, [radius]);
 
-  // Animation loop — runs once on mount
+  // Initial render: compute and set styles once
   useEffect(() => {
-    applyStyles();
+    const s = computeStyles();
+    stylesRef.current = s;
+    setTagStyles(s);
+  }, []); // eslint-disable-line
+
+  // Animation loop — never restarts
+  useEffect(() => {
     const animate = () => {
       const v = velocityRef.current;
       const hasV = Math.abs(v.x) > 0.005 || Math.abs(v.y) > 0.005;
@@ -115,18 +123,19 @@ function CourseSphere({ courses, radius, sphereSize }) {
         rotationRef.current.x += v.y;
         v.x *= 0.95;
         v.y *= 0.95;
-        applyStyles();
-      }
-      if (!draggingRef.current && !hasV) {
+      } else if (!draggingRef.current && !hasV) {
         rotationRef.current.y += 0.0008;
-        applyStyles();
+      }
+      if (!draggingRef.current) {
+        const s = computeStyles();
+        stylesRef.current = s;
+        setTagStyles(s);
       }
       animRef.current = requestAnimationFrame(animate);
     };
     animRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // eslint-disable-line
 
   const handleMouseDown = useCallback((e) => {
     if (e.button !== 0) return;
@@ -136,7 +145,7 @@ function CourseSphere({ courses, radius, sphereSize }) {
     e.preventDefault();
   }, []);
 
-  // Mouse move/up — register once
+  // Mouse events
   useEffect(() => {
     const move = (e) => {
       if (!draggingRef.current) return;
@@ -146,7 +155,9 @@ function CourseSphere({ courses, radius, sphereSize }) {
       rotationRef.current.x -= dy * 0.005;
       velocityRef.current = { x: dx * 0.005, y: dy * 0.005 };
       lastMouseRef.current = { x: e.clientX, y: e.clientY };
-      applyStyles();
+      const s = computeStyles();
+      stylesRef.current = s;
+      setTagStyles(s);
     };
     const up = () => { draggingRef.current = false; };
     window.addEventListener("mousemove", move);
@@ -155,33 +166,34 @@ function CourseSphere({ courses, radius, sphereSize }) {
       window.removeEventListener("mousemove", move);
       window.removeEventListener("mouseup", up);
     };
-  }, [applyStyles]);
+  }, []); // eslint-disable-line
 
   return (
     <div
-      ref={containerRef}
       onMouseDown={handleMouseDown}
       className="relative cursor-grab active:cursor-grabbing"
       style={{ width: sphereSize, height: sphereSize }}
     >
-      {courses.map((course, i) => (
-        <span
-          key={course}
-          ref={el => { spanRefs.current[i] = el; }}
-          className="absolute left-1/2 top-1/2 px-2.5 py-1 text-xs whitespace-nowrap rounded-lg border select-none"
-          style={{
-            zIndex: 0,
-            opacity: 0,
-            transform: "translate(-50%, -50%)",
-            color: "rgb(168, 178, 209)",
-            background: "rgba(17, 34, 64, 0.9)",
-            borderColor: "rgba(100, 255, 218, 0.2)",
-            pointerEvents: "none",
-          }}
-        >
-          {course}
-        </span>
-      ))}
+      {courses.map((course, i) => {
+        const s = tagStyles[i];
+        return (
+          <span
+            key={course}
+            className="absolute left-1/2 top-1/2 px-2.5 py-1 text-xs whitespace-nowrap rounded-lg border select-none"
+            style={{
+              zIndex: s?.zIndex ?? 0,
+              opacity: s?.opacity ?? 0,
+              transform: s?.transform ?? "translate(-50%, -50%)",
+              color: "rgb(168, 178, 209)",
+              background: "rgba(17, 34, 64, 0.9)",
+              borderColor: "rgba(100, 255, 218, 0.2)",
+              pointerEvents: "none",
+            }}
+          >
+            {course}
+          </span>
+        );
+      })}
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full pointer-events-none"
         style={{ background: "radial-gradient(circle, rgba(100,255,218,0.1), transparent 70%)" }}
