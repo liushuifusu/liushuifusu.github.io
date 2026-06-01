@@ -46,17 +46,15 @@ function EduItem({ edu }) {
 }
 /* ── Single draggable sphere ── */
 function CourseSphere({ courses, radius, sphereSize }) {
-  const spanRefs = useRef([]);
+  const sphereRef = useRef(null);
   const draggingRef = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
   const rotationRef = useRef({ x: 0.3, y: 0 });
   const velocityRef = useRef({ x: 0, y: 0 });
   const animRef = useRef(null);
-  const baseRef = useRef([]);
-  const readyRef = useRef(false);
 
-  // Compute base positions (stable)
-  const basePositions = useMemo(() => {
+  // Fibonacci sphere positions
+  const positions = useMemo(() => {
     const n = courses.length;
     if (n === 0) return [];
     const pts = [];
@@ -74,47 +72,7 @@ function CourseSphere({ courses, radius, sphereSize }) {
     return pts;
   }, [courses.length, radius]);
 
-  baseRef.current = basePositions;
-
-  // Apply styles to DOM refs directly (no React state in animation loop)
-  const applyToDOM = useCallback(() => {
-    if (!readyRef.current) return;
-    const base = baseRef.current;
-    if (!base || base.length === 0) return;
-    const { x: rotX, y: rotY } = rotationRef.current;
-    const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
-    const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
-    const items = base.map((p, i) => {
-      const x1 = p.x * cosY + p.z * sinY;
-      const z1 = -p.x * sinY + p.z * cosY;
-      const y1 = p.y * cosX - z1 * sinX;
-      const z2 = p.y * sinX + z1 * cosX;
-      return { x: x1, y: y1, z: z2, index: i };
-    });
-    items.sort((a, b) => a.z - b.z);
-    const zMin = -radius, zMax = radius;
-    const els = spanRefs.current;
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      const el = els[item.index];
-      if (!el) continue;
-      const t = (item.z - zMin) / (zMax - zMin);
-      el.style.zIndex = Math.round(t * 100);
-      el.style.opacity = (0.35 + t * 0.65).toString();
-      el.style.transform = `translate(${item.x}px, ${item.y}px) translate(-50%, -50%) scale(${0.7 + t * 0.4})`;
-    }
-  }, [radius]);
-
-  // Mark ready after first paint
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      readyRef.current = true;
-      applyToDOM();
-    });
-    return () => cancelAnimationFrame(frame);
-  }, []); // eslint-disable-line
-
-  // Animation loop
+  // Animation loop — rotates the whole sphere container via CSS transform
   useEffect(() => {
     const animate = () => {
       const v = velocityRef.current;
@@ -127,12 +85,15 @@ function CourseSphere({ courses, radius, sphereSize }) {
       } else if (!draggingRef.current && !hasV) {
         rotationRef.current.y += 0.0008;
       }
-      if (!draggingRef.current) applyToDOM();
+      if (sphereRef.current) {
+        sphereRef.current.style.transform =
+          `rotateX(${rotationRef.current.x}rad) rotateY(${rotationRef.current.y}rad)`;
+      }
       animRef.current = requestAnimationFrame(animate);
     };
     animRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animRef.current);
-  }, []); // eslint-disable-line
+  }, []);
 
   const handleMouseDown = useCallback((e) => {
     if (e.button !== 0) return;
@@ -151,7 +112,6 @@ function CourseSphere({ courses, radius, sphereSize }) {
       rotationRef.current.x -= dy * 0.005;
       velocityRef.current = { x: dx * 0.005, y: dy * 0.005 };
       lastMouseRef.current = { x: e.clientX, y: e.clientY };
-      applyToDOM();
     };
     const up = () => { draggingRef.current = false; };
     window.addEventListener("mousemove", move);
@@ -160,32 +120,39 @@ function CourseSphere({ courses, radius, sphereSize }) {
       window.removeEventListener("mousemove", move);
       window.removeEventListener("mouseup", up);
     };
-  }, []); // eslint-disable-line
+  }, []);
 
   return (
     <div
       onMouseDown={handleMouseDown}
       className="relative cursor-grab active:cursor-grabbing"
-      style={{ width: sphereSize, height: sphereSize }}
+      style={{ width: sphereSize, height: sphereSize, perspective: "600px" }}
     >
-      {courses.map((course, i) => (
-        <span
-          key={course}
-          ref={el => { spanRefs.current[i] = el; }}
-          className="absolute left-1/2 top-1/2 px-2.5 py-1 text-xs whitespace-nowrap rounded-lg border select-none"
-          style={{
-            zIndex: 0,
-            opacity: 0,
-            transform: "translate(-50%, -50%)",
-            color: "rgb(168, 178, 209)",
-            background: "rgba(17, 34, 64, 0.9)",
-            borderColor: "rgba(100, 255, 218, 0.2)",
-            pointerEvents: "none",
-          }}
-        >
-          {course}
-        </span>
-      ))}
+      <div
+        ref={sphereRef}
+        className="relative mx-auto"
+        style={{
+          width: "100%", height: "100%",
+          transformStyle: "preserve-3d",
+          transform: `rotateX(${rotationRef.current.x}rad) rotateY(${rotationRef.current.y}rad)`,
+        }}
+      >
+        {positions.map((pos, i) => (
+          <span
+            key={courses[i]}
+            className="absolute left-1/2 top-1/2 px-2.5 py-1 text-xs whitespace-nowrap rounded-lg border select-none"
+            style={{
+              transform: `translate3d(${pos.x}px, ${pos.y}px, ${pos.z}px) translate(-50%, -50%)`,
+              color: "rgb(168, 178, 209)",
+              background: "rgba(17, 34, 64, 0.9)",
+              borderColor: "rgba(100, 255, 218, 0.2)",
+              pointerEvents: "none",
+            }}
+          >
+            {courses[i]}
+          </span>
+        ))}
+      </div>
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full pointer-events-none"
         style={{ background: "radial-gradient(circle, rgba(100,255,218,0.1), transparent 70%)" }}
