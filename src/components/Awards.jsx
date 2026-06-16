@@ -1,4 +1,3 @@
-import { Trophy } from "lucide-react";
 import { profile } from "../data/profile";
 import useScrollReveal from "../hooks/useScrollReveal";
 

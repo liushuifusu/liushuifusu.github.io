@@ -134,7 +134,7 @@ function CourseSphere({ courses, radius, sphereSize }) {
         style={{
           width: "100%", height: "100%",
           transformStyle: "preserve-3d",
-          transform: `rotateX(${rotationRef.current.x}rad) rotateY(${rotationRef.current.y}rad)`,
+          transform: "rotateX(0.3rad) rotateY(0rad)",
         }}
       >
         {positions.map((pos, i) => (
